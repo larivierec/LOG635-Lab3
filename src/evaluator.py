@@ -3,3 +3,4 @@ class Evaluator:
     self.kb = kb
     self.input = input
     self.output = output
+
