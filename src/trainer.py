@@ -66,8 +66,7 @@ class Evaluator:
   def __init__(self, kb, output):
     self.kb        = kb                # Knowledgebase obtained from trainer
     self.output    = output            # stdout or file?
-    self.k         = 3                 # k constant, defines the number of neighbors
-    self.threshold = 0.8               # use to compare accuracy
+    self.k         = 7                 # k constant, defines the number of neighbors
     self.distance  = euclideanDistance # function used to evaluate the distance
 
   """
@@ -76,6 +75,9 @@ class Evaluator:
   Returns the approximation for each tests.
   """
   def approximate(self, testingData):
+    accurates = 0
+    testVectorCount = 0
+
     with open(testingData) as testingCsv:
       testReader = csv.DictReader(testingCsv, delimiter=';')
 
@@ -84,6 +86,8 @@ class Evaluator:
       for test in testReader:
         if not test: # skip empty line
           continue
+
+        testVectorCount += 1
 
         nearests = SortedDict()
 
@@ -100,11 +104,13 @@ class Evaluator:
         approximatedLabel = majority(labels)
         print("approx: {0}, real: {1}".format(approximatedLabel, testVec.label))
 
-  def applyBackwardElimination(self, testReader):
-    # TODO
-    pass
+        if approximatedLabel == testVec.label:
+          accurates += 1
 
-  def accuracy(self):
+      print('# of accurate results {0}'.format(accurates))
+      print('accuracy : {0}'.format(accurates/testVectorCount))
+
+  def applyBackwardElimination(self, testReader):
     # TODO
     pass
 
