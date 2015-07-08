@@ -30,7 +30,7 @@ class Trainer:
         vectors.append(LabeledVector.fromDict(row))
 
     #kb = map(lambda vec: normalize(vec, vectors), vectors)
-    kb = list(map(lambda vec: vec.normalize, vectors))
+    kb = list(map(lambda vec: vec.normalize(), vectors))
     return kb
 
 class LabeledVector:
@@ -53,24 +53,14 @@ class LabeledVector:
     length = sqrt(sum([pow(f, 2) for f in self.features]))
     return self.__class__.fromList(list(map(lambda x: x/length, self.features)), self.label)
 
-  def label(self):
-    return self.label
-
-  def features(self):
-    return self.features
-
   def __repr__(self):
     return "{0} => {1}".format(self.label, self.features)
 
-#def normalize(vector, all):
-#  ret = {}
-#  for k, v in vector.items():
-#    valuesForKey = list(map(lambda x: x[k], all))
-#    average = mean(valuesForKey)
-#    standardDeviation = stdev(valuesForKey, average) # stdev or variance?
-#    ret[k] = (v - average) / standardDeviation
-#
-#  return ret
+  def __getitem__(self, key):
+    return self.features[key]
+
+  def __iter__(self):
+    return self.features.iter()
 
 class Evaluator:
   def __init__(self, kb, output):
@@ -101,14 +91,14 @@ class Evaluator:
 
         for fact in self.kb:
           d = self.distance(testVec.normalize(), fact)
-          nearests[d] = fact.label()
+          nearests[d] = fact.label
 
         # find K sample based on the closest distance
         labels = list(nearests.values()[0:self.k])
 
         # apply majority vote
         approximatedLabel = majority(labels)
-        print("approx: {0}, real: {1}".format(approximatedLabel, testVec.label()))
+        print("approx: {0}, real: {1}".format(approximatedLabel, testVec.label))
 
   def applyBackwardElimination(self, testReader):
     # TODO
@@ -122,5 +112,4 @@ def majority(labels):
   return max(set(labels), key=labels.count)
 
 def euclideanDistance(v1, v2):
-  #return math.sqrt(sum([pow(float(v1[i]) + float(v2[i]), 2) for i in list(v1.keys())[:-1]]))
-  return math.sqrt(sum([pow(v1[i] + v2[i], 2) for i in v1.features()]))
+  return math.sqrt(sum([pow(v1[i] + v2[i], 2) for i in range(len(v1.features))]))
