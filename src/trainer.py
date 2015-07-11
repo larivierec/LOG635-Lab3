@@ -1,44 +1,88 @@
 import csv, math, itertools
-from statistics import mean, stdev
-from sortedcontainers import SortedDict
+from statistics import mean, pstdev
+from sortedcontainers import SortedListWithKey
 from collections import OrderedDict
 from math import sqrt
 import pdb
 
 class Trainer:
-  def __init__(self, trainingData):
+  def __init__(self, trainingData, testingData, k = 7):
     # References:
     # http://www.d.umn.edu/~deoka001/BackwardElimination.html
     # https://cours.etsmtl.ca/log635/private/notes-de-cours/Cours_10.pdf
-    self.trainingData  = trainingData
+    self.trainingData = trainingData
+    self.testingData  = testingData
+    self.distance     = euclideanDistance
+    self.k            = k
 
-  """
-  Reads the entire training data and normalize it using and average and a
-  standard deviation for each attributes (this might be a variance instead).
-
-  Returns the KB obtained by normalization.
-  """
   def train(self):
-    vectors = []
-    with open(self.trainingData) as trainingCsv:
-      trainingReader = csv.DictReader(trainingCsv, delimiter=';')
+    trainingVectors = loadVectors(self.trainingData)
+    testingVectors  = loadVectors(self.testingData)
 
-      for row in trainingReader:
-        if not row: # skip empty line
-          continue
+    allVectors = trainingVectors + testingVectors
 
-        vectors.append(LabeledVector.fromDict(row))
+    normalizedVectors = normalize(allVectors)
 
-    #kb = map(lambda vec: normalize(vec, vectors), vectors)
-    kb = list(map(lambda vec: vec.normalize(), vectors))
-    return kb
+    end = len(trainingVectors)
+    normalizedTrainingVectors = normalizedVectors[0:end]
+    normalizedTestingVectors  = normalizedVectors[end:]
+
+    # Apply backward filter here.
+
+    # Accuracy here.
+    accuracy = self.findNN(normalizedTrainingVectors, normalizedTestingVectors)
+
+    print(accuracy)
+
+  def findNN(self, dataset, examples):
+    exact = 0
+    for fact in dataset:
+      vecWithDistance = SortedListWithKey(key = lambda val: val[0])
+
+      for example in examples:
+        d = self.distance(fact, example)
+        vecWithDistance.add((d, example))
+
+      # find K sample based on the closest distance
+      nearests = list(map(lambda x: x[1].label, vecWithDistance[-self.k:]))
+      print("{} == {}".format(nearests, fact.label))
+
+      # apply majority vote
+      approximatedLabel = majority(list(nearests))
+
+      if approximatedLabel == fact.label:
+        exact += 1
+
+    return exact / len(dataset)
+
+def normalize(vectors):
+  normal = []
+  for c in range(len(vectors[0].features)):
+    values    = list(map(lambda x: x.features[c], vectors))
+    average   = mean(values)
+    deviation = pstdev(values, average)
+    normal.append((average, deviation))
+
+  return list(map(lambda v: v.normalize(normal), vectors))
+
+def loadVectors(file):
+  vectors = []
+  with open(file) as fileCsv:
+    reader = csv.DictReader(fileCsv, delimiter= ';')
+
+    for row in reader:
+      if not row:
+        continue
+
+      vectors.append(LabeledVector.fromDict(row))
+
+  return vectors
 
 class LabeledVector:
   @classmethod
   def fromDict(cls, d):
-    temp = OrderedDict({k: float(v) for k, v in sorted(d.items())})
-    label = temp.pop('quality')
-    features = list(temp.values())
+    label = int(d.pop('quality'))
+    features = [float(v) for k, v in sorted(d.items())]
     return cls(label, features)
 
   @classmethod
@@ -49,70 +93,21 @@ class LabeledVector:
     self.label = label
     self.features = features
 
-  def normalize(self):
-    length = sqrt(sum([pow(f, 2) for f in self.features]))
-    return self.__class__.fromList(list(map(lambda x: x/length, self.features)), self.label)
+  """
+  Normalize using an array of (average, stdev) for each attributes
+  """
+  def normalize(self, normal):
+    newFeatures = [(x - normal[i][0]) / normal[i][1] for i, x in enumerate(self.features)]
+    return LabeledVector.fromList(newFeatures, self.label)
 
   def __repr__(self):
-    return "{0} => {1}".format(self.label, self.features)
+    return "[{0} => {1}]".format(self.label, self.features)
 
   def __getitem__(self, key):
     return self.features[key]
 
   def __iter__(self):
     return self.features.iter()
-
-class Evaluator:
-  def __init__(self, kb, output):
-    self.kb        = kb                # Knowledgebase obtained from trainer
-    self.output    = output            # stdout or file?
-    self.k         = 7                 # k constant, defines the number of neighbors
-    self.distance  = euclideanDistance # function used to evaluate the distance
-
-  """
-  Find the nearests neighbors in KB and try to find the closest.
-
-  Returns the approximation for each tests.
-  """
-  def approximate(self, testingData):
-    accurates = 0
-    testVectorCount = 0
-
-    with open(testingData) as testingCsv:
-      testReader = csv.DictReader(testingCsv, delimiter=';')
-
-      self.applyBackwardElimination(testReader)
-
-      for test in testReader:
-        if not test: # skip empty line
-          continue
-
-        testVectorCount += 1
-
-        nearests = SortedDict()
-
-        testVec = LabeledVector.fromDict(test)
-
-        for fact in self.kb:
-          d = self.distance(testVec.normalize(), fact)
-          nearests[d] = fact.label
-
-        # find K sample based on the closest distance
-        labels = list(nearests.values()[0:self.k])
-
-        # apply majority vote
-        approximatedLabel = majority(labels)
-        print("approx: {0}, real: {1}".format(approximatedLabel, testVec.label))
-
-        if approximatedLabel == testVec.label:
-          accurates += 1
-
-      print('# of accurate results {0}'.format(accurates))
-      print('accuracy : {0}'.format(accurates/testVectorCount))
-
-  def applyBackwardElimination(self, testReader):
-    # TODO
-    pass
 
 def majority(labels):
   return max(set(labels), key=labels.count)
