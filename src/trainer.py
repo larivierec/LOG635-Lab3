@@ -35,7 +35,7 @@ class Trainer:
     # Apply backward filter here.
     for i in range(self.numberOfAttrs):
       origTraining = list(self.trainingVectors)
-      self.trainingVectors = list(map(lambda x: , self.trainingVectors))
+      self.trainingVectors = list(map(lambda x: del x.features[i], self.trainingVectors))
 
     # Accuracy here.
     accuracy = self.findNN(k, self.trainingVectors, self.testingVectors)
