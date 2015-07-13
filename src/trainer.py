@@ -33,9 +33,25 @@ class Trainer:
 
   def train(self, k = 7):
     # Apply backward filter here.
-    for i in range(self.numberOfAttrs):
+
+    """
+    accuracy = 0
+    i = 0
+    while i != len(self.trainingVectors[0].features):
       origTraining = list(self.trainingVectors)
-      self.trainingVectors = list(map(lambda x: del x.features[i], self.trainingVectors))
+      self.trainingVectors = list(map(lambda x: x.remove(i), self.trainingVectors))
+
+      print(len(self.trainingVectors[0].features))
+      bfAccuracy = self.findNN(k, self.trainingVectors, self.trainingVectors)
+      if bfAccuracy > accuracy:
+        accuracy = bfAccuracy
+        print("BF : {}".format(bfAccuracy))
+        i = 0
+      else:
+        print("BF : {}".format(bfAccuracy))
+        self.trainingVectors = origTraining
+        i += 1
+    """
 
     # Accuracy here.
     accuracy = self.findNN(k, self.trainingVectors, self.testingVectors)
@@ -52,7 +68,6 @@ class Trainer:
 
       # find K sample based on the closest distance
       nearests = list(map(lambda x: x[1].label, vecWithDistance[-k:]))
-      print("{} == {}".format(nearests, fact.label))
 
       # apply majority vote
       approximatedLabel = majority(list(nearests))
@@ -64,8 +79,7 @@ class Trainer:
 
 def normalize(vectors):
   normal = []
-  self.numberOfAttrs = len(vectors[0].features)
-  for c in range(self.numberOfAttrs):
+  for c in range(len(vectors[0].features)):
     values    = list(map(lambda x: x.features[c], vectors))
     average   = mean(values)
     deviation = pstdev(values, average)
@@ -96,6 +110,10 @@ class LabeledVector:
   @classmethod
   def fromList(cls, l, label):
     return cls(label, l)
+
+  def remove(self, i):
+    del self.features[i]
+    return self
 
   def __init__(self, label = "", features = []):
     self.label = label
