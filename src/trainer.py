@@ -6,16 +6,20 @@ from math import sqrt
 import pdb
 
 class Trainer:
-  def __init__(self, trainingData, testingData, k = 7):
+  def __init__(self, trainingData, testingData):
     # References:
     # http://www.d.umn.edu/~deoka001/BackwardElimination.html
     # https://cours.etsmtl.ca/log635/private/notes-de-cours/Cours_10.pdf
-    self.trainingData = trainingData
-    self.testingData  = testingData
-    self.distance     = euclideanDistance
-    self.k            = k
+    self.trainingData    = trainingData
+    self.testingData     = testingData
+    self.distance        = euclideanDistance
+    self.trainingVectors = []
+    self.testingVectors  = []
+    self.numberOfAttrs   = 0
 
-  def train(self):
+    self.preprocess()
+
+  def preprocess(self):
     trainingVectors = loadVectors(self.trainingData)
     testingVectors  = loadVectors(self.testingData)
 
@@ -24,17 +28,20 @@ class Trainer:
     normalizedVectors = normalize(allVectors)
 
     end = len(trainingVectors)
-    normalizedTrainingVectors = normalizedVectors[0:end]
-    normalizedTestingVectors  = normalizedVectors[end:]
+    self.trainingVectors = normalizedVectors[0:end]
+    self.testingVectors = normalizedVectors[end:]
 
+  def train(self, k = 7):
     # Apply backward filter here.
+    for i in range(self.numberOfAttrs):
+      origTraining = list(self.trainingVectors)
+      self.trainingVectors = list(map(lambda x: , self.trainingVectors))
 
     # Accuracy here.
-    accuracy = self.findNN(normalizedTrainingVectors, normalizedTestingVectors)
+    accuracy = self.findNN(k, self.trainingVectors, self.testingVectors)
+    return accuracy
 
-    print(accuracy)
-
-  def findNN(self, dataset, examples):
+  def findNN(self, k, dataset, examples):
     exact = 0
     for fact in dataset:
       vecWithDistance = SortedListWithKey(key = lambda val: val[0])
@@ -44,7 +51,7 @@ class Trainer:
         vecWithDistance.add((d, example))
 
       # find K sample based on the closest distance
-      nearests = list(map(lambda x: x[1].label, vecWithDistance[-self.k:]))
+      nearests = list(map(lambda x: x[1].label, vecWithDistance[-k:]))
       print("{} == {}".format(nearests, fact.label))
 
       # apply majority vote
@@ -57,7 +64,8 @@ class Trainer:
 
 def normalize(vectors):
   normal = []
-  for c in range(len(vectors[0].features)):
+  self.numberOfAttrs = len(vectors[0].features)
+  for c in range(self.numberOfAttrs):
     values    = list(map(lambda x: x.features[c], vectors))
     average   = mean(values)
     deviation = pstdev(values, average)
