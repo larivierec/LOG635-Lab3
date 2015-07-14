@@ -1,4 +1,5 @@
 import csv, math, itertools
+import numpy as np
 from statistics import mean, pstdev
 from sortedcontainers import SortedListWithKey
 from collections import OrderedDict
@@ -13,11 +14,24 @@ class Trainer:
     self.trainingData    = trainingData
     self.testingData     = testingData
     self.distance        = euclideanDistance
-    self.trainingVectors = []
-    self.testingVectors  = []
     self.numberOfAttrs   = 0
 
     self.preprocess()
+    self.preprocess2()
+
+  def preprocess2(self):
+    trainingVectors = np.genfromtxt(self.trainingData, dtype=float, delimiter=';', names=False)
+    testingVectors  = np.genfromtxt(self.testingData, dtype=float, delimiter=';', names=False)
+
+    print(trainingVectors)
+    print(testingVectors)
+
+    allVectors = np.append(trainingVectors, testingVectors)
+
+    normalized = np.apply_over_axes(np.std, allVectors, [0, len(allVectors[0]) - 1])
+
+    print(normalized)
+
 
   def preprocess(self):
     trainingVectors = loadVectors(self.trainingData)
@@ -26,10 +40,11 @@ class Trainer:
     allVectors = trainingVectors + testingVectors
 
     normalizedVectors = normalize(allVectors)
+    print(normalizedVectors)
 
-    end = len(trainingVectors)
-    self.trainingVectors = normalizedVectors[0:end]
-    self.testingVectors = normalizedVectors[end:]
+    #end = len(trainingVectors)
+    #self.trainingVectors = normalizedVectors[0:end]
+    #self.testingVectors = normalizedVectors[end:]
 
   def train(self, k = 7):
     # Apply backward filter here.
