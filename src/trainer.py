@@ -32,28 +32,14 @@ class Trainer:
     self.testingVectors = normalizedVectors[end:]
 
   def train(self, k = 7):
-    """
-    accuracy = 0
-    i = 0
-    while i != len(self.trainingVectors[0].features):
-      origTraining = list(self.trainingVectors)
-      self.trainingVectors = list(map(lambda x: x.remove(i), self.trainingVectors))
-
-      print(len(self.trainingVectors[0].features))
-      bfAccuracy = self.findNN(k, self.trainingVectors, self.trainingVectors)
-      if bfAccuracy > accuracy:
-        accuracy = bfAccuracy
-        print("BF : {}".format(bfAccuracy))
-        i = 0
-      else:
-        print("BF : {}".format(bfAccuracy))
-        self.trainingVectors = origTraining
-        i += 1
-    """
+    self.applyBackwardFilter(k, self.trainingVectors)
 
     # Accuracy here.
     accuracy = self.findNN(k, self.trainingVectors, self.testingVectors)
     return accuracy
+
+  def applyBackwardFilter(self, k, examples):
+    pass
 
   def findNN(self, k, dataset, examples):
     exact = 0
@@ -68,7 +54,7 @@ class Trainer:
       nearests = list(map(lambda x: x[1].label, vecWithDistance[-k:]))
 
       # apply majority vote
-      approximatedLabel = majority(list(nearests))
+      approximatedLabel = majority(nearests)
 
       if approximatedLabel == fact.label:
         exact += 1
@@ -94,11 +80,11 @@ def loadVectors(file):
       if not row:
         continue
 
-      vectors.append(LabeledVector.fromDict(row))
+      vectors.append(WeightedVec.fromDict(row))
 
   return vectors
 
-class LabeledVector:
+class WeightedVec:
   @classmethod
   def fromDict(cls, d):
     label = int(d.pop('quality'))
@@ -122,10 +108,10 @@ class LabeledVector:
   """
   def normalize(self, normal):
     newFeatures = [(x - normal[i][0]) / normal[i][1] for i, x in enumerate(self.features)]
-    return LabeledVector.fromList(newFeatures, self.label)
+    return WeightedVec.fromList(newFeatures, self.label)
 
   def __repr__(self):
-    return "[{0} => {1}]".format(self.label, self.features)
+    return "[{0}:{1}]".format(self.label, self.features)
 
   def __getitem__(self, key):
     return self.features[key]
