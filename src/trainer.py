@@ -1,5 +1,6 @@
 import csv, math, itertools
 import numpy as np
+from scipy.spatial.distance import euclidean
 from statistics import mean, pstdev
 from sortedcontainers import SortedListWithKey
 from collections import OrderedDict
@@ -17,21 +18,6 @@ class Trainer:
     self.numberOfAttrs   = 0
 
     self.preprocess()
-    self.preprocess2()
-
-  def preprocess2(self):
-    trainingVectors = np.genfromtxt(self.trainingData, dtype=float, delimiter=';', names=False)
-    testingVectors  = np.genfromtxt(self.testingData, dtype=float, delimiter=';', names=False)
-
-    print(trainingVectors)
-    print(testingVectors)
-
-    allVectors = np.append(trainingVectors, testingVectors)
-
-    normalized = np.apply_over_axes(np.std, allVectors, [0, len(allVectors[0]) - 1])
-
-    print(normalized)
-
 
   def preprocess(self):
     trainingVectors = loadVectors(self.trainingData)
@@ -40,15 +26,12 @@ class Trainer:
     allVectors = trainingVectors + testingVectors
 
     normalizedVectors = normalize(allVectors)
-    print(normalizedVectors)
 
-    #end = len(trainingVectors)
-    #self.trainingVectors = normalizedVectors[0:end]
-    #self.testingVectors = normalizedVectors[end:]
+    end = len(trainingVectors)
+    self.trainingVectors = normalizedVectors[0:end]
+    self.testingVectors = normalizedVectors[end:]
 
   def train(self, k = 7):
-    # Apply backward filter here.
-
     """
     accuracy = 0
     i = 0
@@ -78,7 +61,7 @@ class Trainer:
       vecWithDistance = SortedListWithKey(key = lambda val: val[0])
 
       for example in examples:
-        d = self.distance(fact, example)
+        d = self.distance(fact.features, example.features)
         vecWithDistance.add((d, example))
 
       # find K sample based on the closest distance
@@ -154,4 +137,4 @@ def majority(labels):
   return max(set(labels), key=labels.count)
 
 def euclideanDistance(v1, v2):
-  return math.sqrt(sum([pow(v1[i] + v2[i], 2) for i in range(len(v1.features))]))
+  return math.sqrt(sum([pow(v1[i] - v2[i], 2) for i in range(len(v1))]))
