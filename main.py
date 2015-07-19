@@ -9,12 +9,11 @@ def transfer(activation, derivative=False):
 class Neuron:
   def __init__(self, nbInputs):
     self.weights     = np.random.rand(nbInputs + 1)
-    self.delta       = np.zeros(nbInputs + 1)
+    self.lastDelta   = np.zeros(nbInputs + 1)
     self.derivatives = np.zeros(nbInputs + 1)
-    self.lastDelta   = 0
+    self.delta       = 0
 
   def activate(self, vector):
-    pdb.set_trace()
     sum = self.weights[-1] * 1.0
     for (i, input) in enumerate(vector):
       sum += self.weights[i] * input
@@ -25,7 +24,7 @@ class Neuron:
     self.output = transfer(self.activation)
 
 class NeuralNetwork:
-  def __init__(self, domain, nbInputs, learningRate = 0.3, nbNodes = 4, iterations = 2000):
+  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4, iterations=2000):
     self.domain        = domain
     self.nbInputs      = nbInputs
     self.learningRate  = learningRate
@@ -78,14 +77,14 @@ class NeuralNetwork:
 
         neuron.derivatives[-1] += neuron.delta * 1.0
 
-  def updateWeights(self, mom = 0.8):
+  def updateWeights(self, momentum=0.8):
     for layer in self.network:
       for neuron in layer:
         for (i, weight) in enumerate(neuron.weights):
-          delta = (self.learningRate * neuron.derivatives[i]) + neuron.lastDelta[i] * mom
-          neuron.weights[i] += delta
-          neuron.lastDelta = delta
-          neuron.derivatives = 0.0
+          delta = (self.learningRate * neuron.derivatives[i]) + neuron.lastDelta[i] * momentum
+          neuron.weights[i]    += delta
+          neuron.lastDelta[i]   = delta
+          neuron.derivatives[i] = 0.0
 
   def trainNetwork(self):
     correct = 0
@@ -95,11 +94,11 @@ class NeuralNetwork:
         expected = pattern[-1]
         output = self.forwardPropagate(vector)
 
-        # if round(expected) == expected:
-        #   correct += 1
+        if round(expected) == expected:
+          correct += 1
 
-        # self.backwardPropagateError(expected)
-        # self.calculateErrorDerivativesForWeights(vector)
+        self.backwardPropagateError(expected)
+        self.calculateErrorDerivativesForWeights(vector)
 
       self.updateWeights()
       if (epoch + 1) % 100 == 0:
