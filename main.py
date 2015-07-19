@@ -35,7 +35,7 @@ class NeuralNetwork:
   def initializeNetwork(self):
     self.network = []
     self.network.append([Neuron(self.nbInputs)] * self.nbNodes)
-    self.network.append([Neuron(len(self.network))])
+    self.network.append([Neuron(len(self.network[-1]))])
 
   def forwardPropagate(self, vector):
     input = vector
