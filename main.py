@@ -25,8 +25,35 @@ class NeuralNetwork:
     self.network.append([Neuron(self.nbInputs)] * self.nbHiddenNodes)
     self.network.append([Neuron(len(self.network))])
 
-  def trainNetwork(self):
+  def forwardPropagate(self, vector):
     pass
+
+  def backwardPropagateError(self, expected):
+    pass
+
+  def calculateErrorDerivativesForWeights(self, vector):
+    pass
+
+  def updateWeights(self):
+    pass
+
+  def trainNetwork(self):
+    correct = 0
+    for epoch in range(self.iterations):
+      for vector in self.domain:
+        expected = vector[-1]
+        output = self.forwardPropagate(vector)
+
+        if round(expected) == expected:
+          correct += 1
+
+        self.backwardPropagateError(expected)
+        self.calculateErrorDerivativesForWeights(vector)
+
+      self.updateWeights()
+      if (epoch + 1) % 100 == 0:
+        print("epoch={}, correct={}/{}".format((epoch + 1), correct, 100*len(self.domain)))
+        correct = 0
 
   def testNetwork(self):
     pass
