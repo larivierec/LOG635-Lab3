@@ -14,22 +14,24 @@ class Neuron:
     self.delta       = 0
 
   def activate(self, vector):
-    sum = self.weights[-1] * 1.0
+    summ = self.weights[-1] * 1.0
     for (i, input) in enumerate(vector):
-      sum += self.weights[i] * input
+      summ += self.weights[i] * input
 
-    self.activation = sum
+    self.activation = summ
 
   def transfer(self):
     self.output = transfer(self.activation)
 
 class NeuralNetwork:
-  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4, iterations=2000):
+  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4, iterations=2000, seed=42):
     self.domain        = domain
     self.nbInputs      = nbInputs
     self.learningRate  = learningRate
     self.nbNodes       = nbNodes
     self.iterations    = iterations
+
+    np.random.seed(seed)
 
   def initializeNetwork(self):
     self.network = []
@@ -55,15 +57,15 @@ class NeuralNetwork:
 
       if index == networkLength - 1:
         neuron = self.network[index][0] # only one node in output layer
-        error = (expected - neuron.output)
+        error  = (expected - neuron.output)
         neuron.delta = error * transfer(neuron.output, derivative=True)
       else:
         for (j, neuron) in enumerate(self.network[index]):
-          sum = 0.0
+          summ = 0.0
           for nextNeuron in self.network[index+1]:
-            sum += nextNeuron.weights[j] * nextNeuron.delta
+            summ += nextNeuron.weights[j] * nextNeuron.delta
 
-          neuron.delta = sum * transfer(neuron.output, derivative=True)
+          neuron.delta = summ * transfer(neuron.output, derivative=True)
 
   def calculateErrorDerivativesForWeights(self, vector):
     input = vector
@@ -81,9 +83,9 @@ class NeuralNetwork:
     for layer in self.network:
       for neuron in layer:
         for (i, weight) in enumerate(neuron.weights):
-          delta = (self.learningRate * neuron.derivatives[i]) + neuron.lastDelta[i] * momentum
-          neuron.weights[i]    += delta
-          neuron.lastDelta[i]   = delta
+          delta = (self.learningRate * neuron.derivatives[i]) + (neuron.lastDelta[i] * momentum)
+          neuron.weights[i] += delta
+          neuron.lastDelta[i] = delta
           neuron.derivatives[i] = 0.0
 
   def trainNetwork(self):
@@ -94,15 +96,16 @@ class NeuralNetwork:
         expected = pattern[-1]
         output = self.forwardPropagate(vector)
 
-        if round(expected) == expected:
+        if round(output) == expected:
           correct += 1
 
         self.backwardPropagateError(expected)
         self.calculateErrorDerivativesForWeights(vector)
 
       self.updateWeights()
-      if (epoch + 1) % 100 == 0:
-        print("epoch={}, correct={}/{}".format((epoch + 1), correct, 100*len(self.domain)))
+      nextEpoch = epoch + 1
+      if nextEpoch % 100 == 0:
+        print("epoch={}, correct={}/{}".format(nextEpoch, correct, 100*len(self.domain)))
         correct = 0
 
   def testNetwork(self):
