@@ -1,5 +1,6 @@
 import numpy as np
 import pdb, sys, math
+from functools import reduce
 
 def transferFunc(output, derivative=False):
   if derivative:
@@ -18,7 +19,7 @@ def normalizeVectors(vectors, high=1.0, low=0.0):
 
 class Neuron:
   def __init__(self, nbInputs):
-    self.weights     = np.random.rand(nbInputs + 1)
+    self.weights     = np.random.rand(nbInputs + 1) * 0.5
     self.lastDelta   = np.zeros(nbInputs + 1)
     self.derivatives = np.zeros(nbInputs + 1)
     self.delta       = 0
@@ -50,7 +51,9 @@ class NeuralNetwork:
   def initializeNetwork(self):
     self.network = []
     self.network.append([Neuron(self.nbInputs)] * self.nbNodes)
+    self.network.append([Neuron(len(self.network[-1]))] * self.nbNodes)
     self.network.append([Neuron(len(self.network[-1]))])
+    print("Topology : {} {}".format(self.nbInputs, reduce(lambda m,i: m + "{} ".format(str(len(i))), self.network, "")))
 
   def forwardPropagate(self, vector):
     input = vector
@@ -93,11 +96,11 @@ class NeuralNetwork:
 
         neuron.derivatives[-1] += neuron.delta
 
-  def updateWeights(self, momentum=0.8):
+  def updateWeights(self):
     for layer in self.network:
       for neuron in layer:
         for (i, weight) in enumerate(neuron.weights):
-          delta = (self.learningRate * neuron.derivatives[i]) + (neuron.lastDelta[i] * momentum)
+          delta = (self.learningRate * neuron.derivatives[i]) + (neuron.lastDelta[i] * self.momentum)
           neuron.weights[i] += delta
           neuron.lastDelta[i] = delta
           neuron.derivatives[i] = 0.0
@@ -143,5 +146,5 @@ if __name__ == '__main__':
   # domain = normalizeVectors(loadVectors("input.csv"))
   nbInputs = len(domain[0]) - 1
 
-  network = NeuralNetwork(domain, nbInputs)
+  network = NeuralNetwork(domain, nbInputs, iterations=2000)
   network.run()
