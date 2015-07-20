@@ -1,10 +1,10 @@
 import numpy as np
 import pdb, sys, math
 
-def transfer(activation, derivative=False):
+def transferFunc(output, derivative=False):
   if derivative:
-    return activation * (1.0 - activation)
-  return 1.0 / (1.0 + math.exp(-activation))
+    return output * (1.0 - output)
+  return 1.0 / (1.0 + math.exp(-output))
 
 class Neuron:
   def __init__(self, nbInputs):
@@ -21,7 +21,10 @@ class Neuron:
     self.activation = summ
 
   def transfer(self):
-    self.output = transfer(self.activation)
+    self.output = transferFunc(self.activation)
+
+  def transferDerivative(self):
+    return transferFunc(self.output, derivative=True)
 
 class NeuralNetwork:
   def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4, iterations=2000, seed=42):
@@ -58,14 +61,14 @@ class NeuralNetwork:
       if index == networkLength - 1:
         neuron = self.network[index][0] # only one node in output layer
         error  = (expected - neuron.output)
-        neuron.delta = error * transfer(neuron.output, derivative=True)
+        neuron.delta = error * neuron.transferDerivative()
       else:
         for (j, neuron) in enumerate(self.network[index]):
           summ = 0.0
           for nextNeuron in self.network[index+1]:
             summ += nextNeuron.weights[j] * nextNeuron.delta
 
-          neuron.delta = summ * transfer(neuron.output, derivative=True)
+          neuron.delta = summ * neuron.transferDerivative()
 
   def calculateErrorDerivativesForWeights(self, vector):
     input = vector
@@ -77,7 +80,7 @@ class NeuralNetwork:
         for (j, signal) in enumerate(input):
           neuron.derivatives[j] += neuron.delta * signal
 
-        neuron.derivatives[-1] += neuron.delta * 1.0
+        neuron.derivatives[-1] += neuron.delta
 
   def updateWeights(self, momentum=0.8):
     for layer in self.network:
@@ -96,7 +99,7 @@ class NeuralNetwork:
         expected = pattern[-1]
         output = self.forwardPropagate(vector)
 
-        if round(output) == expected:
+        if round(output) == round(expected):
           correct += 1
 
         self.backwardPropagateError(expected)
