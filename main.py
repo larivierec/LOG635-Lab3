@@ -37,12 +37,13 @@ class Neuron:
     return transferFunc(self.output, derivative=True)
 
 class NeuralNetwork:
-  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4, iterations=2000, seed=42):
+  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4, iterations=2000, seed=42, momentum=0.8):
     self.domain        = domain
     self.nbInputs      = nbInputs
     self.learningRate  = learningRate
     self.nbNodes       = nbNodes
     self.iterations    = iterations
+    self.momentum      = momentum
 
     np.random.seed(seed)
 
@@ -112,8 +113,8 @@ class NeuralNetwork:
         if round(output) == int(expected):
           correct += 1
 
-        self.backwardPropagateError(expected)
-        self.calculateErrorDerivativesForWeights(vector)
+        self.backwardPropagateError(expected) # something fucks up here
+        self.calculateErrorDerivativesForWeights(vector) # or here?
 
       self.updateWeights()
       nextEpoch = epoch + 1
