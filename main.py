@@ -6,6 +6,16 @@ def transferFunc(output, derivative=False):
     return output * (1.0 - output)
   return 1.0 / (1.0 + math.exp(-output))
 
+def loadVectors(file):
+  vectors = np.genfromtxt(file, names=True, delimiter=";")
+  return vectors.view(np.float64).reshape(vectors.shape + (-1,))
+
+def normalizeVectors(vectors, high=1.0, low=0.0):
+  mins = np.min(vectors, axis=0)
+  maxs = np.max(vectors, axis=0)
+  rng = maxs - mins
+  return high - (((high - low) * (maxs - vectors)) / rng)
+
 class Neuron:
   def __init__(self, nbInputs):
     self.weights     = np.random.rand(nbInputs + 1)
@@ -99,7 +109,7 @@ class NeuralNetwork:
         expected = pattern[-1]
         output = self.forwardPropagate(vector)
 
-        if round(output) == round(expected):
+        if round(output) == int(expected):
           correct += 1
 
         self.backwardPropagateError(expected)
@@ -112,6 +122,7 @@ class NeuralNetwork:
         correct = 0
 
   def testNetwork(self):
+    # TODO
     pass
 
   def run(self):
@@ -122,11 +133,13 @@ class NeuralNetwork:
 if __name__ == '__main__':
   # problem configuration
   domain = np.array([
-      [0.0, 0.0, 0.0],
-      [0.0, 1.0, 1.0],
-      [1.0, 0.0, 1.0],
-      [1.0, 1.0, 0.0],
+      [0.0, 0.0, 0],
+      [0.0, 1.0, 1],
+      [1.0, 0.0, 1],
+      [1.0, 1.0, 0],
     ])
+
+  # domain = normalizeVectors(loadVectors("input.csv"))
   nbInputs = len(domain[0]) - 1
 
   network = NeuralNetwork(domain, nbInputs)
