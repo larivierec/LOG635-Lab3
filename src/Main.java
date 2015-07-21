@@ -60,25 +60,27 @@ public class Main {
                     this.mDoubleInputData = new double[lineCount][array.length - 1];
                     this.normalizeData = new double[lineCount][array.length - 1];
                     this.mins = new double[array.length];
-                    for(double d:mins){
-                        d = Double.MAX_VALUE;
+                    for (int i = 0; i < mins.length; i++) {
+                        mins[i] = Double.MAX_VALUE;
                     }
                     this.maxs = new double[array.length];
-                    for(double d:maxs){
-                        d = Double.MIN_VALUE;
+                    for (int i = 0; i < maxs.length; i++) {
+                        maxs[i] = Double.MIN_VALUE;
                     }
                     this.ys = new double[lineCount];
                     this.normalizeYs = new double[lineCount];
-                }else{
-                    for(int j = 0; j < array.length; j++){
-                        if(j < array.length - 1) {
+                }else {
+                    for (int j = 0; j < array.length; j++) {
+                        if (j < array.length - 1) {
                             this.mDoubleInputData[counter - 1][j] = Double.parseDouble((String) array[j]);
-                            if(mins[j]>this.mDoubleInputData[counter - 1][j])mins[j] = this.mDoubleInputData[counter - 1][j];
-                            if(maxs[j]<this.mDoubleInputData[counter - 1][j])maxs[j] = this.mDoubleInputData[counter - 1][j];
-                        }else{
+                            if (mins[j] > this.mDoubleInputData[counter - 1][j])
+                                mins[j] = this.mDoubleInputData[counter - 1][j];
+                            if (maxs[j] < this.mDoubleInputData[counter - 1][j])
+                                maxs[j] = this.mDoubleInputData[counter - 1][j];
+                        } else {
                             this.ys[counter - 1] = Double.parseDouble((String) array[j]);
-                            if(mins[j]>this.ys[counter - 1])mins[j] = this.ys[counter - 1];
-                            if(maxs[j]<this.ys[counter - 1])maxs[j] = this.ys[counter - 1];
+                            if (mins[j] > this.ys[counter - 1]) mins[j] = this.ys[counter - 1];
+                            if (maxs[j] < this.ys[counter - 1]) maxs[j] = this.ys[counter - 1];
                         }
                     }
                 }
