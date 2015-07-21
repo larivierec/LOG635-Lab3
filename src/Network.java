@@ -4,7 +4,7 @@
 public class Network {
     private int width;
     private final int depth = 8;
-    private final double alpha = 0.3;
+    private final double alpha = 0.5;
     private Neurone[][] brain;
 
     private double output;
@@ -68,6 +68,7 @@ public class Network {
             for (int i = 0; i < width; i++) {
                 brain[i][j].computeDeltaI(temp[i]);
                 temp[i]= brain[i][j].getDeltaI();
+                brain[i][j].fixWeights(alpha);
             }
         }
     }
