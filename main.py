@@ -21,9 +21,7 @@ class Neuron:
 
   def activate(self, vector):
     summ = self.weights[-1] * 1.0
-    for (i, elem) in enumerate(vector):
-      summ += self.weights[i] * elem
-
+    summ += sum([self.weights[i] * elem for i, elem in enumerate(vector)])
     self.activation = summ
 
   def transfer(self):
@@ -62,7 +60,7 @@ class NeuralNetwork:
   def buildFromPreviousLayerOutput(self, i):
     return np.array([self.network[i-1][k].output for k in range(len(self.network[i-1]))])
 
-  def forwardPropagate(self, vector):
+  def propagate(self, vector):
     elem = vector
     for (i, layer) in enumerate(self.network):
       if i > 0:
@@ -91,7 +89,7 @@ class NeuralNetwork:
 
           neuron.transferDerivative(summ)
 
-  def calculateErrorDerivativesForWeights(self, vector):
+  def calculateErrorDerivatives(self, vector):
     elem = vector
     for (i, layer) in enumerate(self.network):
       if i > 0:
@@ -118,13 +116,13 @@ class NeuralNetwork:
       for pattern in self.domain:
         vector   = pattern[0:-1]
         expected = pattern[-1]
-        output   = self.forwardPropagate(vector)
+        output   = self.propagate(vector)
 
         if round(output) == int(expected):
           correct += 1
 
         self.backwardPropagateError(expected)
-        self.calculateErrorDerivativesForWeights(vector)
+        self.calculateErrorDerivatives(vector)
 
       self.updateWeights()
 
@@ -137,7 +135,7 @@ class NeuralNetwork:
     correct = 0
     for pattern in self.domain:
       vector = pattern[0:-1]
-      output = self.forwardPropagate(vector)
+      output = self.propagate(vector)
       if round(output) == int(pattern[-1]):
         correct += 1
     print("accuracy={}".format(correct / len(self.domain) * 100))
