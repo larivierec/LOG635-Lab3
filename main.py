@@ -2,17 +2,6 @@ import numpy as np
 import pdb, sys, math
 from functools import reduce
 
-def transferFunc(output, derivative=False):
-  if derivative:
-    return output * (1.0 - output)
-  return 1.0 / (1.0 + math.exp(-output))
-
-def activate(weights, vector):
-  summ = weights[-1] * 1.0
-  for (i, elem) in enumerate(vector):
-    summ += weights[i] * elem
-  return summ
-
 def loadVectors(file):
   vectors = np.genfromtxt(file, names=True, delimiter=";")
   return vectors.view(np.float64).reshape(vectors.shape + (-1,))
@@ -30,23 +19,44 @@ class Neuron:
     self.derivatives = np.zeros(nbInputs + 1)
     self.delta       = 0.0
 
+  def activate(self, vector):
+    summ = self.weights[-1] * 1.0
+    for (i, elem) in enumerate(vector):
+      summ += self.weights[i] * elem
+
+    self.activation = summ
+
+  def transfer(self):
+    self.output = (1.0 / (1.0 + math.exp(-self.activation)))
+
+  def transferDerivative(self, error):
+    self.delta = error * (self.output * (1.0 - self.output))
+
 class NeuralNetwork:
-  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4, iterations=2000, seed=3, momentum=0.8):
+  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4, iterations=2000, seed=3, momentum=0.8, nbLayers=1):
     self.domain        = domain
     self.nbInputs      = nbInputs
     self.learningRate  = learningRate
     self.nbNodes       = nbNodes
     self.iterations    = iterations
     self.momentum      = momentum
+    self.nbLayers      = nbLayers
 
     np.random.seed(seed)
 
   def initializeNetwork(self):
     self.network = []
-    self.network.append([Neuron(self.nbInputs) for i in range(self.nbNodes)])
-    self.network.append([Neuron(len(self.network[-1])) for i in range(self.nbNodes)])
-    self.network.append([Neuron(len(self.network[-1]))])
+    self.network.append(self.buildLayer(self.nbInputs))
+    for _ in range(self.nbLayers):
+      self.network.append(self.buildLayer(len(self.network[-1])))
+
+    self.network.append(self.buildLayer(len(self.network[-1]), count=1))
+
     print("Topology : {} {}".format(self.nbInputs, reduce(lambda m,i: m + "{} ".format(str(len(i))), self.network, "")))
+
+  def buildLayer(self, nbAttrs, count=None):
+    count = count or self.nbNodes
+    return [Neuron(nbAttrs) for _ in range(count)]
 
   def forwardPropagate(self, vector):
     elem = vector
@@ -55,8 +65,8 @@ class NeuralNetwork:
         elem = np.array([self.network[i-1][k].output for k in range(len(self.network[i-1]))])
 
       for neuron in layer:
-        neuron.activation = activate(neuron.weights, elem)
-        neuron.output     = transferFunc(neuron.activation)
+        neuron.activate(elem)
+        neuron.transfer()
 
     return self.network[-1][0].output
 
@@ -68,14 +78,14 @@ class NeuralNetwork:
       if index == networkLength - 1:
         neuron = self.network[index][0] # only one node in output layer
         error  = (expected - neuron.output)
-        neuron.delta = error * transferFunc(neuron.output, derivative=True)
+        neuron.transferDerivative(error)
       else:
         for (j, neuron) in enumerate(self.network[index]):
           summ = 0.0
           for nextNeuron in self.network[index+1]:
             summ += (nextNeuron.weights[j] * nextNeuron.delta)
 
-          neuron.delta = summ * transferFunc(neuron.output, derivative=True)
+          neuron.transferDerivative(summ)
 
   def calculateErrorDerivativesForWeights(self, vector):
     elem = vector
