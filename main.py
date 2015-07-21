@@ -46,23 +46,27 @@ class NeuralNetwork:
 
   def initializeNetwork(self):
     self.network = []
-    self.network.append(self.buildLayer(nbAttrs=self.nbInputs))
+    self.appendLayer(nbAttrs=self.nbInputs)
     for _ in range(self.nbLayers):
-      self.network.append(self.buildLayer())
+      self.appendLayer()
 
-    self.network.append(self.buildLayer(nbNeurons=1))
+    self.appendLayer(nbNeurons=1)
     print("Topologie du reseau : {} {}".format(self.nbInputs, reduce(lambda m,i: m + "{} ".format(str(len(i))), self.network, "")))
 
-  def buildLayer(self, nbAttrs=None, nbNeurons=None):
-    nbAttrs = nbAttrs or len(self.network[-1])
+  def appendLayer(self, nbAttrs=None, nbNeurons=None):
+    nbAttrs   = nbAttrs or len(self.network[-1])
     nbNeurons = nbNeurons or self.nbNodes
-    return [Neuron(nbAttrs) for _ in range(nbNeurons)]
+    neurons   = [Neuron(nbAttrs) for _ in range(nbNeurons)]
+    self.network.append(neurons)
+
+  def buildFromPreviousLayerOutput(self, i):
+    return np.array([self.network[i-1][k].output for k in range(len(self.network[i-1]))])
 
   def forwardPropagate(self, vector):
     elem = vector
     for (i, layer) in enumerate(self.network):
       if i > 0:
-        elem = np.array([self.network[i-1][k].output for k in range(len(self.network[i-1]))])
+        elem = self.buildFromPreviousLayerOutput(i)
 
       for neuron in layer:
         neuron.activate(elem)
@@ -91,7 +95,7 @@ class NeuralNetwork:
     elem = vector
     for (i, layer) in enumerate(self.network):
       if i > 0:
-        elem = np.array([self.network[i-1][k].output for k in range(len(self.network[i-1]))])
+        elem = self.buildFromPreviousLayerOutput(i)
 
       for neuron in layer:
         for (j, signal) in enumerate(elem):
@@ -110,7 +114,6 @@ class NeuralNetwork:
 
   def trainNetwork(self):
     correct = 0
-    itera = 0
     for epoch in range(self.iterations):
       for pattern in self.domain:
         vector   = pattern[0:-1]
@@ -122,7 +125,6 @@ class NeuralNetwork:
 
         self.backwardPropagateError(expected)
         self.calculateErrorDerivativesForWeights(vector)
-        itera += 1
 
       self.updateWeights()
 
