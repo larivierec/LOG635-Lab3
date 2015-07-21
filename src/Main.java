@@ -25,12 +25,13 @@ public class Main {
         }
         */
         m.brain = new Network(m.normalizeData[0]);
-        m.brain.learn(m.ys[0]);
+        m.brain.learn(m.normalizeYs[0]);
         System.out.println(m.brain.getOutput());
         for(int i = 2; i < m.normalizeData.length; i += 2){
             m.brain.calculate(m.normalizeData[i]);
             m.brain.learn(m.normalizeYs[i]);
-            System.out.println(m.brain.getOutput());
+            //System.out.println(m.brain.getOutput());
+            System.out.println(((m.brain.getOutput()*m.maxs[m.maxs.length-1])+m.mins[m.mins.length -1]));
         }
     }
 

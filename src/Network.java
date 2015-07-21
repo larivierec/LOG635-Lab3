@@ -2,17 +2,17 @@
  * Created by Michel on 2015-07-20.
  */
 public class Network {
-    private int width;
-    private final int depth = 8;
-    private final double alpha = 0.5;
+    private int width = 60;
+    private final int depth = 2;
+    private final double alpha = 0.3;
     private Neurone[][] brain;
 
     private double output;
 
     public Network(double... vars) {
-        width = vars.length;
+        //width = vars.length;
         brain = new Neurone[width][depth];
-        double[][] temp = new double[2][vars.length];
+        double[][] temp = new double[2][width];
         for (int i = 0; i < width; i++) {
             brain[i][0] = new Neurone(vars);
             brain[i][0].computeAJ();
@@ -26,14 +26,14 @@ public class Network {
             }
         }
         double out =0;
-        for(int i = 0; i<vars.length; i++){
+        for(int i = 0; i<width; i++){
             out += temp[(depth - 1)%2][i];
         }
         output = out;
     }
 
     public void calculate(double... vars){
-        double[][] temp = new double[2][vars.length];
+        double[][] temp = new double[2][width];
         for (int i = 0; i < width; i++) {
             brain[i][0].newValues(vars);
             brain[i][0].computeAJ();
@@ -47,7 +47,7 @@ public class Network {
             }
         }
         double out =0;
-        for(int i = 0; i<vars.length; i++){
+        for(int i = 0; i<width; i++){
             out += temp[(depth - 1)%2][i];
         }
         output = out;

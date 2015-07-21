@@ -39,7 +39,7 @@ public class Neurone {
     }
 
     public void computeDeltaJ(double y){
-        deltaJ = getGPrime(dansJ)*(y-aj);
+        deltaJ = (y-aj)/Math.abs(getGPrime(dansJ));
     }
 
     public double getDeltaJ(){
@@ -48,7 +48,7 @@ public class Neurone {
 
     public void computeDeltaI(double deltaJ){
         isI = true;
-        deltaI = getGPrime(dansJ)*getDansJ(vectorized(deltaJ));
+        deltaI = getDansJ(vectorized(deltaJ))/getGPrime(dansJ);
     }
 
     public double getDeltaI(){
@@ -59,7 +59,7 @@ public class Neurone {
         for (int i = 0; i < weight.length; i++) {
             weight[i] += alpha * ai[i] * (isI?deltaI:deltaJ);
         }
-        w0 += isI?deltaI:deltaJ;
+        w0 += alpha * (isI?deltaI:deltaJ);
         isI = false;
     }
 
