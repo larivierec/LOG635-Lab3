@@ -25,7 +25,7 @@ def normalizeVectors(vectors, high=1.0, low=0.0):
 
 class Neuron:
   def __init__(self, nbInputs):
-    self.weights     = np.random.uniform(0, 1, nbInputs + 1)
+    self.weights     = np.random.uniform(-0.5, 0.5, nbInputs + 1)
     self.lastDelta   = np.zeros(nbInputs + 1)
     self.derivatives = np.zeros(nbInputs + 1)
     self.delta       = 0.0
@@ -43,8 +43,8 @@ class NeuralNetwork:
 
   def initializeNetwork(self):
     self.network = []
-    self.network.append([Neuron(self.nbInputs)] * self.nbNodes)
-    self.network.append([Neuron(len(self.network[-1]))] * self.nbNodes)
+    self.network.append([Neuron(self.nbInputs) for i in range(self.nbNodes)])
+    self.network.append([Neuron(len(self.network[-1])) for i in range(self.nbNodes)])
     self.network.append([Neuron(len(self.network[-1]))])
     print("Topology : {} {}".format(self.nbInputs, reduce(lambda m,i: m + "{} ".format(str(len(i))), self.network, "")))
 
@@ -106,8 +106,7 @@ class NeuralNetwork:
         vector   = pattern[0:-1]
         expected = pattern[-1]
         output   = self.forwardPropagate(vector)
-        #if itera > 1000:
-        #  pdb.set_trace()
+
         if round(output) == int(expected):
           correct += 1
 
