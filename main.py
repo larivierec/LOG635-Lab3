@@ -46,17 +46,17 @@ class NeuralNetwork:
 
   def initializeNetwork(self):
     self.network = []
-    self.network.append(self.buildLayer(self.nbInputs))
+    self.network.append(self.buildLayer(nbAttrs=self.nbInputs))
     for _ in range(self.nbLayers):
-      self.network.append(self.buildLayer(len(self.network[-1])))
+      self.network.append(self.buildLayer())
 
-    self.network.append(self.buildLayer(len(self.network[-1]), count=1))
+    self.network.append(self.buildLayer(nbNeurons=1))
+    print("Topologie du reseau : {} {}".format(self.nbInputs, reduce(lambda m,i: m + "{} ".format(str(len(i))), self.network, "")))
 
-    print("Topology : {} {}".format(self.nbInputs, reduce(lambda m,i: m + "{} ".format(str(len(i))), self.network, "")))
-
-  def buildLayer(self, nbAttrs, count=None):
-    count = count or self.nbNodes
-    return [Neuron(nbAttrs) for _ in range(count)]
+  def buildLayer(self, nbAttrs=None, nbNeurons=None):
+    nbAttrs = nbAttrs or len(self.network[-1])
+    nbNeurons = nbNeurons or self.nbNodes
+    return [Neuron(nbAttrs) for _ in range(nbNeurons)]
 
   def forwardPropagate(self, vector):
     elem = vector
