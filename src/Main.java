@@ -13,6 +13,8 @@ public class Main {
     private double[] normalizeYs;
     private Network brain;
 
+    private int succesfulTest = 0;
+
     public static void main(String[] args) {
         Main m = new Main();
         m.getData();
@@ -27,12 +29,21 @@ public class Main {
         m.brain = new Network(m.normalizeData[0]);
         m.brain.learn(m.normalizeYs[0]);
         System.out.println(m.brain.getOutput());
-        for(int i = 2; i < m.normalizeData.length; i += 2){
+        //TODO changer for pour while avec test
+        int i = 2;
+        while(i < m.normalizeData.length && m.succesfulTest < 10){
             m.brain.calculate(m.normalizeData[i]);
-            m.brain.learn(m.normalizeYs[i]);
+            if(Math.abs(m.brain.getOutput() - m.normalizeYs[i]) > 0.08) {
+                m.brain.learn(m.normalizeYs[i]);
+                m.succesfulTest = 0;
+            }else{
+                m.succesfulTest++;
+            }
             //System.out.println(m.brain.getOutput());
             System.out.println(((m.brain.getOutput()*m.maxs[m.maxs.length-1])+m.mins[m.mins.length -1]));
+            i+=2;
         }
+        System.out.println(m.succesfulTest);
     }
 
     public void getData(){
