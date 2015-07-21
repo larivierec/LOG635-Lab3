@@ -2,11 +2,11 @@ import numpy as np
 import pdb, sys, math
 from functools import reduce
 
-def loadVectors(file):
+def loadExternalData(file):
   vectors = np.genfromtxt(file, names=True, delimiter=";")
   return vectors.view(np.float64).reshape(vectors.shape + (-1,))
 
-def normalizeVectors(vectors, high=1.0, low=0.0):
+def normalize(vectors, high=1.0, low=0.0):
   mins = np.min(vectors, axis=0)
   maxs = np.max(vectors, axis=0)
   rng = maxs - mins
@@ -118,7 +118,7 @@ class NeuralNetwork:
         expected = pattern[-1]
         output   = self.propagate(vector)
 
-        if round(output) == int(expected):
+        if round(output * 10) == int(expected):
           correct += 1
 
         self.backwardPropagateError(expected)
@@ -147,12 +147,13 @@ class NeuralNetwork:
 
 if __name__ == '__main__':
   # problem configuration
-  domain = np.array([
-      [0.0, 0.0, 0],
-      [0.0, 1.0, 1],
-      [1.0, 0.0, 1],
-      [1.0, 1.0, 0],
-    ])
+  # domain = np.array([
+  #     [0.0, 0.0, 0],
+  #     [0.0, 1.0, 1],
+  #     [1.0, 0.0, 1],
+  #     [1.0, 1.0, 0],
+  #   ])
+  domain = normalize(loadExternalData("input.csv"))
 
   nbInputs = len(domain[0]) - 1
 
