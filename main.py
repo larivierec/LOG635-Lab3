@@ -7,6 +7,12 @@ def transferFunc(output, derivative=False):
     return output * (1.0 - output)
   return 1.0 / (1.0 + math.exp(-output))
 
+def activate(weights, vector):
+  summ = weights[-1] * 1.0
+  for (i, elem) in enumerate(vector):
+    summ += weights[i] * elem
+  return summ
+
 def loadVectors(file):
   vectors = np.genfromtxt(file, names=True, delimiter=";")
   return vectors.view(np.float64).reshape(vectors.shape + (-1,))
@@ -19,26 +25,13 @@ def normalizeVectors(vectors, high=1.0, low=0.0):
 
 class Neuron:
   def __init__(self, nbInputs):
-    self.weights     = np.random.uniform(-0.5, 0.5, nbInputs + 1)
+    self.weights     = np.random.uniform(0, 1, nbInputs + 1)
     self.lastDelta   = np.zeros(nbInputs + 1)
     self.derivatives = np.zeros(nbInputs + 1)
-    self.delta       = 0
-
-  def activate(self, vector):
-    summ = self.weights[-1] * 1.0
-    for (i, elem) in enumerate(vector):
-      summ += self.weights[i] * elem
-
-    self.activation = summ
-
-  def transfer(self):
-    self.output = transferFunc(self.activation)
-
-  def transferDerivative(self, error):
-    self.delta = error * transferFunc(self.output, derivative=True)
+    self.delta       = 0.0
 
 class NeuralNetwork:
-  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4, iterations=2000, seed=42, momentum=0.8):
+  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4, iterations=2000, seed=3, momentum=0.8):
     self.domain        = domain
     self.nbInputs      = nbInputs
     self.learningRate  = learningRate
@@ -62,8 +55,8 @@ class NeuralNetwork:
         elem = np.array([self.network[i-1][k].output for k in range(len(self.network[i-1]))])
 
       for neuron in layer:
-        neuron.activate(elem)
-        neuron.transfer()
+        neuron.activation = activate(neuron.weights, elem)
+        neuron.output     = transferFunc(neuron.activation)
 
     return self.network[-1][0].output
 
@@ -75,14 +68,14 @@ class NeuralNetwork:
       if index == networkLength - 1:
         neuron = self.network[index][0] # only one node in output layer
         error  = (expected - neuron.output)
-        neuron.transferDerivative(error)
+        neuron.delta = error * transferFunc(neuron.output, derivative=True)
       else:
         for (j, neuron) in enumerate(self.network[index]):
           summ = 0.0
           for nextNeuron in self.network[index+1]:
             summ += (nextNeuron.weights[j] * nextNeuron.delta)
 
-          neuron.transferDerivative(summ)
+          neuron.delta = summ * transferFunc(neuron.output, derivative=True)
 
   def calculateErrorDerivativesForWeights(self, vector):
     elem = vector
@@ -107,28 +100,33 @@ class NeuralNetwork:
 
   def trainNetwork(self):
     correct = 0
+    itera = 0
     for epoch in range(self.iterations):
       for pattern in self.domain:
-        vector = pattern[0:-1]
+        vector   = pattern[0:-1]
         expected = pattern[-1]
-        output = self.forwardPropagate(vector)
-
+        output   = self.forwardPropagate(vector)
+        #if itera > 1000:
+        #  pdb.set_trace()
         if round(output) == int(expected):
           correct += 1
 
         self.backwardPropagateError(expected)
         self.calculateErrorDerivativesForWeights(vector)
+        itera += 1
 
       self.updateWeights()
-      #print("CORRECT = {0}".format(correct))
+
       nextEpoch = epoch + 1
       if nextEpoch % 100 == 0:
         print("epoch={}, correct={}/{}".format(nextEpoch, correct, 100*len(self.domain)))
         correct = 0
 
   def testNetwork(self):
-    # TODO
-    pass
+    for pattern in self.domain:
+      vector = pattern[0:-1]
+      output = self.forwardPropagate(vector)
+      print("approximated: {}, real: {}".format(round(output), pattern[-1]))
 
   def run(self):
     self.initializeNetwork()
@@ -144,7 +142,6 @@ if __name__ == '__main__':
       [1.0, 1.0, 0],
     ])
 
-  # domain = normalizeVectors(loadVectors("input.csv"))
   nbInputs = len(domain[0]) - 1
 
   network = NeuralNetwork(domain, nbInputs, iterations=2000)
