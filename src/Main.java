@@ -29,19 +29,19 @@ public class Main {
         m.brain = new Network(m.normalizeData[0]);
         m.brain.learn(m.normalizeYs[0]);
         System.out.println(m.brain.getOutput());
-        //TODO changer for pour while avec test
         int i = 2;
-        while(i < m.normalizeData.length && m.succesfulTest < 10){
+        while(i < m.normalizeData.length && m.succesfulTest < 40){
             m.brain.calculate(m.normalizeData[i]);
+            m.brain.learn(m.normalizeYs[i]);
             if(Math.abs(m.brain.getOutput() - m.normalizeYs[i]) > 0.08) {
-                m.brain.learn(m.normalizeYs[i]);
-                m.succesfulTest = 0;
+                m.succesfulTest = m.succesfulTest <= 0? 0: m.succesfulTest - 1;
             }else{
                 m.succesfulTest++;
             }
+            System.out.print("Expected: " + m.ys[i] + " final: ");
             //System.out.println(m.brain.getOutput());
             System.out.println(((m.brain.getOutput()*m.maxs[m.maxs.length-1])+m.mins[m.mins.length -1]));
-            i+=2;
+            i++;
         }
         System.out.println(m.succesfulTest);
     }
