@@ -134,10 +134,13 @@ class NeuralNetwork:
         correct = 0
 
   def testNetwork(self):
+    correct = 0
     for pattern in self.domain:
       vector = pattern[0:-1]
       output = self.forwardPropagate(vector)
-      print("approximated: {}, real: {}".format(round(output), pattern[-1]))
+      if round(output) == int(pattern[-1]):
+        correct += 1
+    print("accuracy={}".format(correct / len(self.domain) * 100))
 
   def run(self):
     self.initializeNetwork()
