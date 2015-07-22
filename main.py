@@ -31,7 +31,7 @@ class Neuron:
     self.delta = error * (self.output * (1.0 - self.output))
 
 class NeuralNetwork:
-  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4, iterations=2000, seed=3, momentum=0.8, nbLayers=1):
+  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4, iterations=2000, seed=42, momentum=0.8, nbLayers=1):
     self.domain        = domain
     self.nbInputs      = nbInputs
     self.learningRate  = learningRate
@@ -118,7 +118,7 @@ class NeuralNetwork:
         expected = pattern[-1]
         output   = self.propagate(vector)
 
-        if round(output * 10) == int(expected):
+        if round(output) == int(expected):
           correct += 1
 
         self.backwardPropagateError(expected)
@@ -147,13 +147,13 @@ class NeuralNetwork:
 
 if __name__ == '__main__':
   # problem configuration
-  # domain = np.array([
-  #     [0.0, 0.0, 0],
-  #     [0.0, 1.0, 1],
-  #     [1.0, 0.0, 1],
-  #     [1.0, 1.0, 0],
-  #   ])
-  domain = normalize(loadExternalData("input.csv"))
+  domain = np.array([
+      [0.0, 0.0, 0],
+      [0.0, 1.0, 1],
+      [1.0, 0.0, 1],
+      [1.0, 1.0, 0],
+    ])
+  # domain = normalize(loadExternalData("input.csv"))
 
   nbInputs = len(domain[0]) - 1
 
