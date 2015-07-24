@@ -6,11 +6,13 @@ def loadExternalData(file):
   vectors = np.genfromtxt(file, names=True, delimiter=";")
   return vectors.view(np.float64).reshape(vectors.shape + (-1,))
 
-def normalize(vectors, high=1.0, low=0.0):
+def normalize(vectors, high=1.0, low=0.0, adjustment=1):
   mins = np.min(vectors, axis=0)
   maxs = np.max(vectors, axis=0)
   rng = maxs - mins
-  return high - (((high - low) * (maxs - vectors)) / rng)
+  adj = (np.zeros(len(vectors[0])) + 1)
+  adj[-1] = adjustment
+  return (high - (((high - low) * (maxs - vectors)) / rng)) * adj
 
 class Neuron:
   def __init__(self, nbInputs):
@@ -159,10 +161,13 @@ if __name__ == '__main__':
   #     [1.0, 0.0, 1],
   #     [1.0, 1.0, 0],
   #   ])
-  domain = normalize(loadExternalData("input.csv"))
-  adjustment = (np.zeros(12) + 1)
-  adjustment[-1] = 10
-  print(adjustment)
+  domain = normalize(loadExternalData("input.csv"), adjustment=10)
+
+  # adjustment = (np.zeros(12) + 1)
+  # adjustment[-1] = 10
+
+#  domain = domain * adjustment
+
   print(domain)
   nbInputs = len(domain[0]) - 1
 
