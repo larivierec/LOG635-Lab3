@@ -1,5 +1,5 @@
 import numpy as np
-import pdb, sys, math
+import ipdb, sys, math
 from functools import reduce
 
 def loadExternalData(file):
@@ -14,7 +14,7 @@ def normalize(vectors, high=1.0, low=0.0):
 
 class Neuron:
   def __init__(self, nbInputs):
-    self.weights     = np.random.uniform(-0.5, 0.5, nbInputs + 1)
+    self.weights     = np.random.rand(nbInputs + 1)
     self.lastDelta   = np.zeros(nbInputs + 1)
     self.derivatives = np.zeros(nbInputs + 1)
     self.delta       = 0.0
@@ -31,7 +31,7 @@ class Neuron:
     self.delta = error * (self.output * (1.0 - self.output))
 
 class NeuralNetwork:
-  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4, iterations=2000, seed=42, momentum=0.8, nbLayers=1):
+  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4, iterations=2000, seed=123456, momentum=0.8, nbLayers=1):
     self.domain        = domain
     self.nbInputs      = nbInputs
     self.learningRate  = learningRate
@@ -112,17 +112,23 @@ class NeuralNetwork:
 
   def trainNetwork(self):
     correct = 0
+    itera = 0
     for epoch in range(self.iterations):
-      for pattern in self.domain:
+      for (i, pattern) in enumerate(self.domain):
         vector   = pattern[0:-1]
         expected = pattern[-1]
         output   = self.propagate(vector)
+
+        if itera > 1000:
+          if round(output) != int(expected):
+            print("i={}, output={}, expected={}".format(i, output, expected))
 
         if round(output) == int(expected):
           correct += 1
 
         self.backwardPropagateError(expected)
         self.calculateErrorDerivatives(vector)
+        itera += 1
 
       self.updateWeights()
 
@@ -147,15 +153,18 @@ class NeuralNetwork:
 
 if __name__ == '__main__':
   # problem configuration
-  domain = np.array([
-      [0.0, 0.0, 0],
-      [0.0, 1.0, 1],
-      [1.0, 0.0, 1],
-      [1.0, 1.0, 0],
-    ])
-  # domain = normalize(loadExternalData("input.csv"))
-
+  # domain = np.array([
+  #     [0.0, 0.0, 0],
+  #     [0.0, 1.0, 1],
+  #     [1.0, 0.0, 1],
+  #     [1.0, 1.0, 0],
+  #   ])
+  domain = normalize(loadExternalData("input.csv"))
+  adjustment = (np.zeros(12) + 1)
+  adjustment[-1] = 10
+  print(adjustment)
+  print(domain)
   nbInputs = len(domain[0]) - 1
 
-  network = NeuralNetwork(domain, nbInputs, iterations=2000)
-  network.run()
+  #network = NeuralNetwork(domain, nbInputs, iterations=2000)
+  #network.run()
