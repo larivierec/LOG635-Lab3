@@ -6,24 +6,25 @@ def loadExternalData(file):
   vectors = np.genfromtxt(file, names=True, delimiter=";")
   return vectors.view(np.float64).reshape(vectors.shape + (-1,))
 
-def normalize(vectors, high=1.0, low=0.0, adjustment=1):
+def normalize(vectors, high=1.0, low=0.0, ignore=-1):
   mins = np.min(vectors, axis=0)
   maxs = np.max(vectors, axis=0)
+  mins[ignore] = 0
+  maxs[ignore] = 1
   rng = maxs - mins
-  adj = (np.zeros(len(vectors[0])) + 1)
-  adj[-1] = adjustment
-  return (high - (((high - low) * (maxs - vectors)) / rng)) * adj
+  return (high - (((high - low) * (maxs - vectors)) / rng)) * 1.0
 
-class Neuron:
+class Neuron(object):
   def __init__(self, nbInputs):
-    self.weights     = np.random.rand(nbInputs + 1)
+    self.weights     = np.random.uniform(0,0.5, nbInputs + 1)
     self.lastDelta   = np.zeros(nbInputs + 1)
     self.derivatives = np.zeros(nbInputs + 1)
     self.delta       = 0.0
 
   def activate(self, vector):
-    summ = self.weights[-1] * 1.0
-    summ += sum([self.weights[i] * elem for i, elem in enumerate(vector)])
+    #summ = self.weights[-1] * 1.0
+    #summ = 0
+    summ = sum([self.weights[i] * elem for i, elem in enumerate(vector)])
     self.activation = summ
 
   def transfer(self):
@@ -32,8 +33,12 @@ class Neuron:
   def transferDerivative(self, error):
     self.delta = error * (self.output * (1.0 - self.output))
 
-class NeuralNetwork:
-  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4, iterations=2000, seed=123456, momentum=0.8, nbLayers=1):
+  def __repr__(self):
+    return str(self.__dict__)
+
+class NeuralNetwork(object):
+  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4,
+               iterations=2000, seed=123456, momentum=0.8, nbLayers=1):
     self.domain        = domain
     self.nbInputs      = nbInputs
     self.learningRate  = learningRate
@@ -72,6 +77,7 @@ class NeuralNetwork:
         neuron.activate(elem)
         neuron.transfer()
 
+    ipdb.set_trace()
     return self.network[-1][0].output
 
   def backwardPropagateError(self, expected):
@@ -114,23 +120,20 @@ class NeuralNetwork:
 
   def trainNetwork(self):
     correct = 0
-    itera = 0
     for epoch in range(self.iterations):
       for (i, pattern) in enumerate(self.domain):
         vector   = pattern[0:-1]
-        expected = pattern[-1]
-        output   = self.propagate(vector)
+        expected = round(pattern[-1])
+        prop     = self.propagate(vector)
+        output   = round(prop * 10)
 
-        if itera > 1000:
-          if round(output) != int(expected):
-            print("i={}, output={}, expected={}".format(i, output, expected))
+        #if epoch > 50:
 
-        if round(output) == int(expected):
+        if output == expected:
           correct += 1
 
-        self.backwardPropagateError(expected)
+        self.backwardPropagateError(expected / 10.0)
         self.calculateErrorDerivatives(vector)
-        itera += 1
 
       self.updateWeights()
 
@@ -144,7 +147,7 @@ class NeuralNetwork:
     for pattern in self.domain:
       vector = pattern[0:-1]
       output = self.propagate(vector)
-      if round(output) == int(pattern[-1]):
+      if round(output) == round(pattern[-1]):
         correct += 1
     print("accuracy={}".format(correct / len(self.domain) * 100))
 
@@ -155,21 +158,10 @@ class NeuralNetwork:
 
 if __name__ == '__main__':
   # problem configuration
-  # domain = np.array([
-  #     [0.0, 0.0, 0],
-  #     [0.0, 1.0, 1],
-  #     [1.0, 0.0, 1],
-  #     [1.0, 1.0, 0],
-  #   ])
-  domain = normalize(loadExternalData("input.csv"), adjustment=10)
-
-  # adjustment = (np.zeros(12) + 1)
-  # adjustment[-1] = 10
-
-#  domain = domain * adjustment
+  domain = normalize(loadExternalData("input.csv"))
 
   print(domain)
   nbInputs = len(domain[0]) - 1
 
-  #network = NeuralNetwork(domain, nbInputs, iterations=2000)
-  #network.run()
+  network = NeuralNetwork(domain, nbInputs, iterations=2000, nbNodes=11, nbLayers=0)
+  network.run()
