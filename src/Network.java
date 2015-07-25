@@ -2,7 +2,7 @@
  * Created by Michel on 2015-07-20.
  */
 public class Network {
-    private int width = 90;
+    private int width = 93;
     private final int depth = 2;
     private double alpha = 0.8;
     private Neurone[][] brain;
@@ -71,8 +71,9 @@ public class Network {
     }
 
     public void learn(double y) {
-        if(Math.abs(output - y) < 3){
-            alpha = 0.3;
+        if(outputWeight == null && Math.abs(output - y) < 0.9 && alpha != 0.2){
+            alpha = 0.2;
+            System.out.println("Correction a 0.3 ****************************************************");
         }
         //double delta = Math.abs(y - output);
         //double a = delta > 10?0.9:delta>5?0.3:0.1;
@@ -96,9 +97,10 @@ public class Network {
             }
         }
 
-        if(outputWeight == null && Math.abs(output - y) < 1){
+        if(outputWeight == null && Math.abs(output - y) < 0.2){
             outputWeight = new double[width];
             alpha = 0.7;
+            System.out.println("correction pondérée ***********************************");
         }
     }
 
