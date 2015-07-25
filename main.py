@@ -31,7 +31,7 @@ def loadMatrix(file):
 class Knn(object):
   def __init__(self, training, testing,
                distanceFunc = euclideanDistance,
-               approximateFunc = ponderate):
+               approximateFunc = majority):
 
     self.training        = training
     self.testing         = testing
@@ -64,7 +64,7 @@ class Knn(object):
       distance = self.distanceFunc(exampleV, factV)
       nearests.add((distance, factClass, factV))
 
-    return nearests[-k:]
+    return nearests[:k]
 
   def accuracy(self, k, facts, examples):
     correct = 0
@@ -73,8 +73,8 @@ class Knn(object):
       nn       = self.nearestsNeighbours(k, facts, example)
       output   = self.approximateFunc(nn)
 
-      classes = list(map(lambda x: x[1], nn))
-      print("{} => {} == {}".format(classes, output, expected))
+      # classes = list(map(lambda x: x[1], nn))
+      # print("{} => {} == {}".format(classes, output, expected))
 
       if output == expected:
         correct += 1
@@ -100,7 +100,8 @@ class Knn(object):
     return ignored
 
   def run(self, k):
-    ignored = self.backwardElimination(k)
+    # ignored = self.backwardElimination(k)
+    ignored = []
     result  = self.accuracy(k, np.delete(self.facts, ignored, 1), np.delete(self.examples, ignored, 1))
     print(result)
 
