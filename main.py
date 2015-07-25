@@ -77,7 +77,6 @@ class NeuralNetwork(object):
         neuron.activate(elem)
         neuron.transfer()
 
-    ipdb.set_trace()
     return self.network[-1][0].output
 
   def backwardPropagateError(self, expected):
@@ -96,6 +95,7 @@ class NeuralNetwork(object):
             summ += (nextNeuron.weights[j] * nextNeuron.delta)
 
           neuron.transferDerivative(summ)
+          # print(neuron.delta)
 
   def calculateErrorDerivatives(self, vector):
     elem = vector
