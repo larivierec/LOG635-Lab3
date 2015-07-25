@@ -7,13 +7,14 @@ import ipdb, sys
 def euclideanDistance(p, q):
   return sum([pow(q[i] - p[i], 2) for i, value in enumerate(p)])
 
-def majority(klasses):
-  return max(set(klasses), key=klasses.count)
+def majority(vectors):
+  classes = list(map(lambda x: x[1], vectors))
+  return max(set(classes), key=classes.count)
 
-def ponderate(klasses):
-  a = sum(map(lambda x: x[1].label/ x[0], klasses))
-  b = sum(map(lambda x: 1 / x[0], klasses))
-  return int(a/b)
+def ponderate(vectors):
+  num   = sum(map(lambda x: x[1] / x[0], vectors))
+  denum = sum(map(lambda x: 1 / x[0], vectors))
+  return round(num / denum)
 
 def normalize(vectors, high=1.0, low=0.0, ignore=-1):
   mins = np.min(vectors, axis=0)
@@ -30,7 +31,7 @@ def loadMatrix(file):
 class Knn(object):
   def __init__(self, training, testing,
                distanceFunc = euclideanDistance,
-               approximateFunc = majority):
+               approximateFunc = ponderate):
 
     self.training        = training
     self.testing         = testing
@@ -51,7 +52,7 @@ class Knn(object):
     self.examples     = normalizedMat[end:]
     self.nbAttributes = len(self.facts[0])
 
-  def nearestsClasses(self, k, fact, examples):
+  def nearestsNeighbours(self, k, fact, examples):
     nearests = SortedListWithKey(key = lambda val: val[0])
 
     for example in examples:
@@ -69,11 +70,12 @@ class Knn(object):
     correct = 0
     for fact in facts:
       expected = fact[-1]
-      nn      = self.nearestsClasses(k, fact, examples)
-      classes = list(map(lambda x: x[1], nn))
-      output  = self.approximateFunc(classes)
+      nn      = self.nearestsNeighbours(k, fact, examples)
+      output  = self.approximateFunc(nn)
 
-      ipdb.set_trace()
+      classes = list(map(lambda x: x[1], nn))
+      print("{} => {} == {}".format(classes, output, expected))
+
       if output == expected:
         correct += 1
 
