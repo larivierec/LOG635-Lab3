@@ -52,26 +52,26 @@ class Knn(object):
     self.examples     = normalizedMat[end:]
     self.nbAttributes = len(self.facts[0])
 
-  def nearestsNeighbours(self, k, fact, examples):
+  def nearestsNeighbours(self, k, facts, example):
     nearests = SortedListWithKey(key = lambda val: val[0])
 
-    for example in examples:
+    for fact in facts:
       factV        = fact[0:-1]
       factClass    = fact[-1]
       exampleV     = example[0:-1]
       exampleClass = example[-1]
 
-      distance = self.distanceFunc(factV, exampleV)
-      nearests.add((distance, exampleClass, example))
+      distance = self.distanceFunc(exampleV, factV)
+      nearests.add((distance, factClass, factV))
 
     return nearests[-k:]
 
   def accuracy(self, k, facts, examples):
     correct = 0
-    for fact in facts:
-      expected = fact[-1]
-      nn      = self.nearestsNeighbours(k, fact, examples)
-      output  = self.approximateFunc(nn)
+    for example in examples:
+      expected = example[-1]
+      nn       = self.nearestsNeighbours(k, facts, example)
+      output   = self.approximateFunc(nn)
 
       classes = list(map(lambda x: x[1], nn))
       print("{} => {} == {}".format(classes, output, expected))
@@ -79,10 +79,29 @@ class Knn(object):
       if output == expected:
         correct += 1
 
-    return correct / len(facts)
+    return correct / len(examples)
+
+  def backwardElimination(self, k):
+    accuracy = 0
+    ignored = []
+    for i in range(self.nbAttributes - 1):
+      ignored.append(i)
+
+      facts    = np.delete(self.facts, ignored, 1)
+      examples = np.delete(self.examples, ignored, 1)
+
+      output = self.accuracy(k, facts, examples)
+      print("{} => new accuracy {} for {}".format(len(facts[0]), output, ignored))
+      if output > accuracy:
+        accuracy = output
+      else:
+        ignored.remove(i)
+
+    return ignored
 
   def run(self, k):
-    result = self.accuracy(k, self.facts, self.examples)
+    ignored = self.backwardElimination(k)
+    result  = self.accuracy(k, np.delete(self.facts, ignored, 1), np.delete(self.examples, ignored, 1))
     print(result)
 
 if __name__ == '__main__':
