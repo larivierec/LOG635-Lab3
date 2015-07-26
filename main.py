@@ -3,6 +3,7 @@ import numpy as np
 from sortedcontainers import SortedListWithKey
 from math import sqrt
 import ipdb, sys
+from multiprocessing import Pool
 
 def euclideanDistance(p, q):
   return sum([pow(q[i] - p[i], 2) for i, value in enumerate(p)])
@@ -91,7 +92,8 @@ class Knn(object):
       examples = np.delete(self.examples, ignored, 1)
 
       output = self.accuracy(k, facts, examples)
-      print("{} => new accuracy {} for {}".format(len(facts[0]), output, ignored))
+      print("ignoring {}, accuracy {} for {}".format(i, output, ignored))
+
       if output > accuracy:
         accuracy = output
       else:
@@ -100,11 +102,14 @@ class Knn(object):
     return ignored
 
   def run(self, k):
-    # ignored = self.backwardElimination(k)
-    ignored = []
-    result  = self.accuracy(k, np.delete(self.facts, ignored, 1), np.delete(self.examples, ignored, 1))
-    print(result)
+    ignored = self.backwardElimination(k)
+    result  = self.accuracy(k,
+      np.delete(self.facts, ignored, 1),
+      np.delete(self.examples, ignored, 1))
+
+    return (k, result)
 
 if __name__ == '__main__':
+  p = Pool(4)
   knn = Knn('dataset.csv', 'sample.csv')
-  knn.run(5)
+  print(p.map(knn.run, range(2,30)))
