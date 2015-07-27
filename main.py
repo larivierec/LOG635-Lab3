@@ -3,165 +3,118 @@ import ipdb, sys, math
 from functools import reduce
 
 def loadExternalData(file):
-  vectors = np.genfromtxt(file, names=True, delimiter=";")
-  return vectors.view(np.float64).reshape(vectors.shape + (-1,))
+  matrix = np.genfromtxt(file, names=True, delimiter=";")
+  return matrix.view(np.float64).reshape(matrix.shape + (-1,))
 
-def normalize(vectors, high=1.0, low=0.0, ignore=-1):
-  mins = np.min(vectors, axis=0)
-  maxs = np.max(vectors, axis=0)
-  mins[ignore] = 0
-  maxs[ignore] = 1
+def normalize(matrix, high=1.0, low=0.0, ignore=-1):
+  mins = np.min(matrix, axis=0)
+  maxs = np.max(matrix, axis=0)
   rng = maxs - mins
-  return (high - (((high - low) * (maxs - vectors)) / rng)) * 1.0
+  return (high - (((high - low) * (maxs - matrix)) / rng)) * 1.0
+
+def sigmoid(x):
+  return 1.0 / (1.0 + math.exp(-x))
+
+def sigmoidDeriv(x):
+  # x must be the result of the sigmoid
+  return x * (1.0 - x)
 
 class Neuron(object):
-  def __init__(self, nbInputs):
-    self.weights     = np.random.uniform(0,0.5, nbInputs + 1)
-    self.lastDelta   = np.zeros(nbInputs + 1)
-    self.derivatives = np.zeros(nbInputs + 1)
-    self.delta       = 0.0
+  def __init__(self, nbAttributes):
+    self.weights    = np.random.rand(nbAttributes)
+    self.deltas     = np.zeros(nbAttributes)
+    self.delta      = np.zeros(nbAttributes)
+    self.activation = 0.0
+    self.output     = 0.0
 
   def activate(self, vector):
-    #summ = self.weights[-1] * 1.0
-    #summ = 0
-    summ = sum([self.weights[i] * elem for i, elem in enumerate(vector)])
-    self.activation = summ
+    self.activation = np.sum(self.weights * vector)
 
   def transfer(self):
-    self.output = (1.0 / (1.0 + math.exp(-self.activation)))
-
-  def transferDerivative(self, error):
-    self.delta = error * (self.output * (1.0 - self.output))
+    self.output = sigmoid(self.activation)
 
   def __repr__(self):
-    return str(self.__dict__)
+    return "Neuron(output={})".format(self.output)
 
 class NeuralNetwork(object):
-  def __init__(self, domain, nbInputs, learningRate=0.3, nbNodes=4,
-               iterations=2000, seed=123456, momentum=0.8, nbLayers=1):
-    self.domain        = domain
-    self.nbInputs      = nbInputs
-    self.learningRate  = learningRate
-    self.nbNodes       = nbNodes
-    self.iterations    = iterations
-    self.momentum      = momentum
-    self.nbLayers      = nbLayers
-
-    np.random.seed(seed)
+  def __init__(self, domain, nbAttributes, nbLayers=1, nbNeurons=11, iterations=1, learningRate=0.8):
+    self.domain       = domain
+    self.nbAttributes = nbAttributes
+    self.nbLayers     = nbLayers
+    self.nbNeurons    = nbNeurons
+    self.iterations   = iterations
+    self.learningRate = learningRate
 
   def initializeNetwork(self):
-    self.network = []
-    self.appendLayer(nbAttrs=self.nbInputs)
+    self.layers = []
     for _ in range(self.nbLayers):
-      self.appendLayer()
+      self.addLayer()
+    self.addLayer(nbNeurons=1)
 
-    self.appendLayer(nbNeurons=1)
-    print("Topologie du reseau : {} {}".format(self.nbInputs, reduce(lambda m,i: m + "{} ".format(str(len(i))), self.network, "")))
+  def addLayer(self, nbNeurons=None, nbAttributes=None):
+    nbNeurons    = nbNeurons or self.nbNeurons
+    nbAttributes = nbAttributes or self.nbAttributes
+    self.layers.append([Neuron(nbAttributes) for _ in range(nbNeurons)])
 
-  def appendLayer(self, nbAttrs=None, nbNeurons=None):
-    nbAttrs   = nbAttrs or len(self.network[-1])
-    nbNeurons = nbNeurons or self.nbNodes
-    neurons   = [Neuron(nbAttrs) for _ in range(nbNeurons)]
-    self.network.append(neurons)
-
-  def buildFromPreviousLayerOutput(self, i):
-    return np.array([self.network[i-1][k].output for k in range(len(self.network[i-1]))])
-
-  def propagate(self, vector):
-    elem = vector
-    for (i, layer) in enumerate(self.network):
+  def forwardPropagate(self, vector):
+    for i, layer in enumerate(self.layers):
       if i > 0:
-        elem = self.buildFromPreviousLayerOutput(i)
+        vector = self.buildFromPreviousLayer(i)
 
       for neuron in layer:
-        neuron.activate(elem)
+        neuron.activate(vector)
         neuron.transfer()
 
-    return self.network[-1][0].output
+    return self.layers[-1][0].output
+
+  def buildFromPreviousLayer(self, index):
+    return np.array([neuron.output for neuron in self.layers[index]])
 
   def backwardPropagateError(self, expected):
-    networkLength = len(self.network)
-    for n in range(networkLength):
-      index = networkLength - 1 - n
-
-      if index == networkLength - 1:
-        neuron = self.network[index][0] # only one node in output layer
+    for index in reversed(range(self.nbLayers + 1)):
+      if index == self.nbLayers:
+        # on est sur la couche output
+        neuron = self.layers[index][0]
         error  = (expected - neuron.output)
-        neuron.transferDerivative(error)
+        neuron.delta = error * sigmoidDeriv(neuron.output)
       else:
-        for (j, neuron) in enumerate(self.network[index]):
-          summ = 0.0
-          for nextNeuron in self.network[index+1]:
-            summ += (nextNeuron.weights[j] * nextNeuron.delta)
-
-          neuron.transferDerivative(summ)
-          # print(neuron.delta)
-
-  def calculateErrorDerivatives(self, vector):
-    elem = vector
-    for (i, layer) in enumerate(self.network):
-      if i > 0:
-        elem = self.buildFromPreviousLayerOutput(i)
-
-      for neuron in layer:
-        for (j, signal) in enumerate(elem):
-          neuron.derivatives[j] += neuron.delta * signal
-
-        neuron.derivatives[-1] += neuron.delta * 1.0
+        pass
+        # for (j, neuron) in enumerate(self.layers[index]):
+        #   summ = 0
+        #   for nextNeuron in self.layers[index+1]:
+        #     summ += (nextNeuron.weights[j] * nextNeuron.delta)
+        #   neuron.delta = error * sigmoidDeriv(neuron.output)
 
   def updateWeights(self):
-    for layer in self.network:
+    for layer in self.layers:
       for neuron in layer:
-        for i in range(len(neuron.weights)):
-          delta = (self.learningRate * neuron.derivatives[i]) + (neuron.lastDelta[i] * self.momentum)
-          neuron.weights[i] += delta
-          neuron.lastDelta[i] = delta
-          neuron.derivatives[i] = 0.0
-
-  def trainNetwork(self):
-    correct = 0
-    for epoch in range(self.iterations):
-      for (i, pattern) in enumerate(self.domain):
-        vector   = pattern[0:-1]
-        expected = round(pattern[-1])
-        prop     = self.propagate(vector)
-        output   = round(prop * 10)
-
-        #if epoch > 50:
-
-        if output == expected:
-          correct += 1
-
-        self.backwardPropagateError(expected / 10.0)
-        self.calculateErrorDerivatives(vector)
-
-      self.updateWeights()
-
-      nextEpoch = epoch + 1
-      if nextEpoch % 100 == 0:
-        print("epoch={}, correct={}/{}".format(nextEpoch, correct, 100*len(self.domain)))
-        correct = 0
-
-  def testNetwork(self):
-    correct = 0
-    for pattern in self.domain:
-      vector = pattern[0:-1]
-      output = self.propagate(vector)
-      if round(output) == round(pattern[-1]):
-        correct += 1
-    print("accuracy={}".format(correct / len(self.domain) * 100))
+        neuron.weights += self.learningRate * neuron.output * neuron.delta
 
   def run(self):
     self.initializeNetwork()
-    self.trainNetwork()
-    self.testNetwork()
+    self.train()
+    self.test()
+
+  def train(self):
+    for epoch in range(self.iterations):
+      for pattern in self.domain:
+        expected = pattern[-1]
+        vector = pattern[:-1]
+        output = self.forwardPropagate(vector)
+        self.backwardPropagateError(expected)
+
+        print("{} == {}".format(output, expected))
+
+      self.updateWeights()
+      print(self.layers)
+
+  def test(self):
+    pass
 
 if __name__ == '__main__':
-  # problem configuration
   domain = normalize(loadExternalData("input.csv"))
+  nbAttributes = len(domain[0]) - 1
 
-  print(domain)
-  nbInputs = len(domain[0]) - 1
+  np.random.seed(42)
 
-  network = NeuralNetwork(domain, nbInputs, iterations=2000, nbNodes=11, nbLayers=0)
-  network.run()
+  NeuralNetwork(domain, nbAttributes, iterations=5).run()
