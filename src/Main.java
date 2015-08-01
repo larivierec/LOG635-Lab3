@@ -47,7 +47,7 @@ public class Main {
         System.out.println("***********starting evaluation******************");
 
 
-        m.getData("Exemple_evaluation.csv", true);
+        m.getData("Exemple_evaluation.csv", false);
         for (int k = 0; k < m.normalizeData.length; k++) {
             m.brain.calculate(m.normalizeData[k]);
             System.out.println(((m.brain.getOutput()*m.maxs[m.maxs.length-1])+m.mins[m.mins.length -1]));
